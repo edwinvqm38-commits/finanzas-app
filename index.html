@@ -1068,7 +1068,7 @@ async function doGoogleAuth() {
   if (!SB) { toast('Configura Supabase primero','a'); return; }
   const { error } = await SB.auth.signInWithOAuth({
     provider: 'google',
-    options: { redirectTo: location.href, queryParams: { access_type:'offline', prompt:'consent' } }
+    options: { redirectTo: 'https://edwinvqm38-commits.github.io/finanzas-app', queryParams: { access_type:'offline', prompt:'consent' } }
   });
   if (error) toast('Error Google: '+error.message,'r');
 }
