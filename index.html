@@ -2,11 +2,11 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Finanzas">
-<meta name="theme-color" id="metaTheme" content="#0D1117">
+<meta name="theme-color" id="metaTheme" content="#080C12">
 <title>FinanzasApp</title>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
@@ -58,9 +58,10 @@
 
   /* Layout */
   --hh: 56px;
-  --nh: 72px;
+  --nh: 68px;
   --r:  18px;
   --rs: 12px;
+  --sab: env(safe-area-inset-bottom, 0px);
 
   /* Shadows */
   --sh:  0 8px 32px rgba(0,0,0,.6);
@@ -207,21 +208,22 @@ input,select,textarea{font-family:var(--f);outline:none;color:var(--t1)}
 
 /* Scroll area */
 .scroll{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;
-  padding-bottom:calc(var(--nh)+24px)}
+  padding-bottom:calc(var(--nh) + var(--sab) + 16px)}
 .scroll::-webkit-scrollbar{display:none}
 
 /* Bottom nav — pill indicator style */
-.bnav{height:var(--nh);flex-shrink:0;background:rgba(15,21,32,.9);border-top:1px solid var(--border);
-  display:flex;align-items:center;padding:0 4px 6px;z-index:50;
+.bnav{height:calc(var(--nh) + var(--sab));flex-shrink:0;background:rgba(15,21,32,.95);
+  border-top:1px solid var(--border);
+  display:flex;align-items:flex-start;padding:6px 4px var(--sab);z-index:50;
   backdrop-filter:blur(24px) saturate(180%);transition:background .35s,border-color .35s;position:relative}
-[data-light] .bnav{background:rgba(255,255,255,.92)}
+[data-light] .bnav{background:rgba(255,255,255,.95)}
 .nb{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;color:var(--t3);
   font-size:10px;font-weight:600;padding:8px 2px;border-radius:14px;
   cursor:pointer;transition:all .22s;font-family:var(--f);position:relative}
-.nb i{font-size:22px;transition:transform .22s,color .22s}
+.nb svg{transition:transform .22s,color .22s}
 .nb span{transition:color .22s}
 .nb.on{color:var(--blue)}
-.nb.on i{transform:translateY(-2px);color:var(--blue)}
+.nb.on svg{transform:translateY(-2px);color:var(--blue)}
 .nb.on span{color:var(--blue)}
 .nb.on::before{content:'';position:absolute;top:2px;left:50%;transform:translateX(-50%);
   width:32px;height:3px;border-radius:99px;background:var(--blue)}
@@ -577,11 +579,17 @@ input,select,textarea{font-family:var(--f);outline:none;color:var(--t1)}
 
   <!-- HEADER -->
   <div class="bar">
-    <button class="ib" onclick="toggleMore()"><i class="bi bi-grid-3x3-gap-fill"></i></button>
+    <button class="ib" onclick="toggleMore()">
+      <svg width="18" height="18" fill="currentColor" viewBox="0 0 16 16"><path d="M1 2.5A1.5 1.5 0 0 1 2.5 1h3A1.5 1.5 0 0 1 7 2.5v3A1.5 1.5 0 0 1 5.5 7h-3A1.5 1.5 0 0 1 1 5.5zm8 0A1.5 1.5 0 0 1 10.5 1h3A1.5 1.5 0 0 1 15 2.5v3A1.5 1.5 0 0 1 13.5 7h-3A1.5 1.5 0 0 1 9 5.5zm-8 8A1.5 1.5 0 0 1 2.5 9h3A1.5 1.5 0 0 1 7 10.5v3A1.5 1.5 0 0 1 5.5 15h-3A1.5 1.5 0 0 1 1 13.5zm8 0A1.5 1.5 0 0 1 10.5 9h3a1.5 1.5 0 0 1 1.5 1.5v3a1.5 1.5 0 0 1-1.5 1.5h-3A1.5 1.5 0 0 1 9 13.5z"/></svg>
+    </button>
     <div class="bar-title" id="barTitle">Dashboard</div>
     <div class="bar-btns">
-      <button class="ib" id="themeBtn" onclick="toggleTheme()"><i id="themeIco" class="bi bi-moon-stars-fill"></i></button>
-      <button class="ib" id="syncBtn" onclick="doSync()"><i id="syncIco" class="bi bi-cloud-check"></i></button>
+      <button class="ib" id="themeBtn" onclick="toggleTheme()">
+        <svg id="themeIco" width="18" height="18" fill="currentColor" viewBox="0 0 16 16"><path d="M6 .278a.77.77 0 0 1 .08.858 7.2 7.2 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277q.792-.001 1.533-.16a.79.79 0 0 1 .81.316.73.73 0 0 1-.031.893A8.35 8.35 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.75.75 0 0 1 6 .278"/></svg>
+      </button>
+      <button class="ib" id="syncBtn" onclick="doSync()">
+        <svg id="syncIco" width="18" height="18" fill="currentColor" viewBox="0 0 16 16"><path d="M10.5 8.5a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0"/><path d="M2 13.5A7.5 7.5 0 1 1 14.5 6H13a6 6 0 1 0 .5 3.5h1.55a7.5 7.5 0 0 1-13.05 4"/></svg>
+      </button>
     </div>
   </div>
 
@@ -808,11 +816,25 @@ input,select,textarea{font-family:var(--f);outline:none;color:var(--t1)}
 
   <!-- BOTTOM NAV -->
   <div class="bnav">
-    <button class="nb on" data-v="dashboard" onclick="nav('dashboard')"><i class="bi bi-house-fill"></i><span>Inicio</span></button>
-    <button class="nb" data-v="movimientos" onclick="nav('movimientos')"><i class="bi bi-list-ul"></i><span>Movimientos</span></button>
-    <button class="nb-fab" onclick="openMov('GASTO')"><i class="bi bi-plus-lg"></i></button>
-    <button class="nb" data-v="presupuestos" onclick="nav('presupuestos')"><i class="bi bi-pie-chart-fill"></i><span>Presupuesto</span></button>
-    <button class="nb" data-v="perfil" onclick="nav('perfil')"><i class="bi bi-person-fill"></i><span>Perfil</span></button>
+    <button class="nb on" data-v="dashboard" onclick="nav('dashboard')">
+      <svg width="22" height="22" fill="currentColor" viewBox="0 0 16 16"><path d="M8.707 1.5a1 1 0 0 0-1.414 0L.646 8.146a.5.5 0 0 0 .708.708L8 2.207l6.646 6.647a.5.5 0 0 0 .708-.708L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293z"/><path d="m8 3.293 6 6V13.5a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 2 13.5V9.293z"/></svg>
+      <span>Inicio</span>
+    </button>
+    <button class="nb" data-v="movimientos" onclick="nav('movimientos')">
+      <svg width="22" height="22" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M2.5 12a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5z"/></svg>
+      <span>Movimientos</span>
+    </button>
+    <button class="nb-fab" onclick="openMov('GASTO')">
+      <svg width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M8 2a.5.5 0 0 1 .5.5v5h5a.5.5 0 0 1 0 1h-5v5a.5.5 0 0 1-1 0v-5h-5a.5.5 0 0 1 0-1h5v-5A.5.5 0 0 1 8 2z"/></svg>
+    </button>
+    <button class="nb" data-v="presupuestos" onclick="nav('presupuestos')">
+      <svg width="22" height="22" fill="currentColor" viewBox="0 0 16 16"><path d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h13A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5z"/><path d="M8 10a2 2 0 1 0 0-4 2 2 0 0 0 0 4m0 1a3 3 0 1 1 0-6 3 3 0 0 1 0 6"/><path d="M1.5 16a.5.5 0 0 1-.5-.5v-4a.5.5 0 0 1 1 0v4a.5.5 0 0 0 .5.5h13a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 1 0v4a1.5 1.5 0 0 1-1.5 1.5z"/></svg>
+      <span>Presupuesto</span>
+    </button>
+    <button class="nb" data-v="perfil" onclick="nav('perfil')">
+      <svg width="22" height="22" fill="currentColor" viewBox="0 0 16 16"><path d="M3 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1zm5-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6"/></svg>
+      <span>Perfil</span>
+    </button>
   </div>
 
 </div><!-- /app -->
@@ -823,12 +845,30 @@ input,select,textarea{font-family:var(--f);outline:none;color:var(--t1)}
     <div class="more-h"></div>
     <div style="font-size:11px;font-weight:700;color:var(--t2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px">Todas las secciones</div>
     <div class="mgrid">
-      <div class="mgi" onclick="nav('tarjetas');toggleMore()"><i class="bi bi-credit-card-2-front-fill" style="color:var(--amber)"></i><span>Tarjetas</span></div>
-      <div class="mgi" onclick="nav('metas');toggleMore()"><i class="bi bi-bullseye" style="color:var(--green)"></i><span>Metas</span></div>
-      <div class="mgi" onclick="nav('recurrencias');toggleMore()"><i class="bi bi-arrow-repeat" style="color:var(--cyan)"></i><span>Recurrencias</span></div>
-      <div class="mgi" onclick="nav('cuentas');toggleMore()"><i class="bi bi-bank2" style="color:var(--blue)"></i><span>Cuentas</span></div>
-      <div class="mgi" onclick="nav('reportes');toggleMore()"><i class="bi bi-bar-chart-fill" style="color:var(--pink)"></i><span>Reportes</span></div>
-      <div class="mgi" onclick="nav('perfil');toggleMore()"><i class="bi bi-person-circle" style="color:var(--t2)"></i><span>Perfil</span></div>
+      <div class="mgi" onclick="nav('tarjetas');toggleMore()">
+        <svg width="24" height="24" fill="currentColor" style="color:var(--amber)" viewBox="0 0 16 16"><path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v1H0zm0 3v5a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7zm3 2h1a1 1 0 0 1 1 1v1a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1v-1a1 1 0 0 1 1-1"/></svg>
+        <span>Tarjetas</span>
+      </div>
+      <div class="mgi" onclick="nav('metas');toggleMore()">
+        <svg width="24" height="24" fill="currentColor" style="color:var(--green)" viewBox="0 0 16 16"><path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16"/><path d="M8 13A5 5 0 1 1 8 3a5 5 0 0 1 0 10m0 1A6 6 0 1 0 8 2a6 6 0 0 0 0 12"/><path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6m0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8"/><path d="M9.5 8a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0"/></svg>
+        <span>Metas</span>
+      </div>
+      <div class="mgi" onclick="nav('recurrencias');toggleMore()">
+        <svg width="24" height="24" fill="currentColor" style="color:var(--cyan)" viewBox="0 0 16 16"><path d="M11.534 7h3.932a.25.25 0 0 1 .192.41l-1.966 2.36a.25.25 0 0 1-.384 0l-1.966-2.36a.25.25 0 0 1 .192-.41m-11 2h3.932a.25.25 0 0 0 .192-.41L2.692 6.23a.25.25 0 0 0-.384 0L.342 8.59A.25.25 0 0 0 .534 9"/><path fill-rule="evenodd" d="M8 3c-1.552 0-2.94.707-3.857 1.818a.5.5 0 1 1-.771-.636A6.002 6.002 0 0 1 13.917 7H12.9A5.002 5.002 0 0 0 8 3M3.1 9a5.002 5.002 0 0 0 8.757 2.182.5.5 0 1 1 .771.636A6.002 6.002 0 0 1 2.083 9z"/></svg>
+        <span>Recurrencias</span>
+      </div>
+      <div class="mgi" onclick="nav('cuentas');toggleMore()">
+        <svg width="24" height="24" fill="currentColor" style="color:var(--blue)" viewBox="0 0 16 16"><path d="M2.97 1.35A1 1 0 0 1 3.73 1h8.54a1 1 0 0 1 .76.35l2.609 3.044A1.5 1.5 0 0 1 16 5.37v.255a2.375 2.375 0 0 1-4.25 1.458A2.371 2.371 0 0 1 9.875 8 2.37 2.37 0 0 1 8 7.083 2.37 2.37 0 0 1 6.125 8a2.37 2.37 0 0 1-1.875-.917A2.375 2.375 0 0 1 0 5.625V5.37a1.5 1.5 0 0 1 .361-.976zm1.78 4.275a1.375 1.375 0 0 0 2.75 0 .5.5 0 0 1 1 0 1.375 1.375 0 0 0 2.75 0 .5.5 0 0 1 1 0 1.375 1.375 0 1 0 2.75 0V5.37a.5.5 0 0 0-.12-.325L12.27 2H3.73L1.12 5.045A.5.5 0 0 0 1 5.37v.255a1.375 1.375 0 0 0 2.75 0 .5.5 0 0 1 1 0M1.5 8.5A.5.5 0 0 1 2 9v6h1V9.5a.5.5 0 0 1 1 0V15h3V9.5a.5.5 0 0 1 1 0V15h3V9.5a.5.5 0 0 1 1 0V15h1V9a.5.5 0 0 1 1 0v6h.5a.5.5 0 0 1 0 1H.5a.5.5 0 0 1 0-1H1V9a.5.5 0 0 1 .5-.5"/></svg>
+        <span>Cuentas</span>
+      </div>
+      <div class="mgi" onclick="nav('reportes');toggleMore()">
+        <svg width="24" height="24" fill="currentColor" style="color:var(--pink)" viewBox="0 0 16 16"><path d="M4 11H2v3h2zm5-4H7v7h2zm5-5v12h-2V2zm-2-1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1zM6 7a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1zm-5 4a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1z"/></svg>
+        <span>Reportes</span>
+      </div>
+      <div class="mgi" onclick="nav('perfil');toggleMore()">
+        <svg width="24" height="24" fill="currentColor" style="color:var(--t2)" viewBox="0 0 16 16"><path d="M11 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0"/><path fill-rule="evenodd" d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8m8-7a7 7 0 0 0-5.468 11.37C3.242 11.226 4.805 10 8 10s4.757 1.225 5.468 2.37A7 7 0 0 0 8 1"/></svg>
+        <span>Perfil</span>
+      </div>
     </div>
   </div>
 </div>
@@ -837,7 +877,7 @@ input,select,textarea{font-family:var(--f);outline:none;color:var(--t1)}
 <div class="mo" id="mo" onclick="cM(event)">
   <div class="ms" id="ms">
     <div class="ms-han"></div>
-    <div class="ms-hd"><div class="ms-ttl" id="mT">—</div><button class="ib" onclick="cM()"><i class="bi bi-x-lg"></i></button></div>
+    <div class="ms-hd"><div class="ms-ttl" id="mT">—</div><button class="ib" onclick="cM()"><svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8z"/></svg></button></div>
     <div class="ms-body" id="mB"></div>
     <div class="ms-ft" id="mF" style="display:none"></div>
   </div>
@@ -941,9 +981,10 @@ let DB = {
 function saveDB() {
   localStorage.setItem(DBK, JSON.stringify(DB));
   localStorage.setItem(DBK+'_cfg', JSON.stringify(APP.config));
-  // Auto-sync a la nube si hay sesión activa
+  // Auto-sync a la nube con debounce
   if (SB && APP.user) _cloudSync();
 }
+
 function loadDB() {
   try {
     const r = localStorage.getItem(DBK);
@@ -953,7 +994,8 @@ function loadDB() {
   } catch(e) {}
   if (!DB.categorias.length) seedCats();
 }
-// Sync silencioso (no muestra toast)
+
+// Sync silencioso con debounce de 2s
 let _syncTimer = null;
 function _cloudSync() {
   clearTimeout(_syncTimer);
@@ -964,9 +1006,16 @@ function _cloudSync() {
         { user_id: APP.user.id, data: JSON.stringify(DB), updated_at: new Date().toISOString() },
         { onConflict: 'user_id' }
       );
-      APP.syncMode = 'cloud'; updateSync();
+      APP.syncMode = 'cloud';
+      updateSync();
     } catch(e) { console.warn('Sync error:', e.message); }
-  }, 1500); // espera 1.5s para no spamear
+  }, 2000);
+}
+
+// Guardar local SIN disparar sync a la nube (para loadCloud)
+function _saveLocalOnly() {
+  localStorage.setItem(DBK, JSON.stringify(DB));
+  localStorage.setItem(DBK+'_cfg', JSON.stringify(APP.config));
 }
 function seedCats() {
   DB.categorias = [
@@ -1109,33 +1158,50 @@ function updateSync() {
 
 async function doSync() {
   const ico = document.getElementById('syncIco');
-  ico.className='bi bi-arrow-repeat'; ico.style.animation='spin .7s linear infinite';
-  if (!SB||!APP.user) {
-    saveDB();
-    setTimeout(()=>{ ico.className='bi bi-cloud-check'; ico.style.animation=''; },900);
+  if (ico) ico.style.animation = 'spin .7s linear infinite';
+  if (!SB || !APP.user) {
+    localStorage.setItem(DBK, JSON.stringify(DB));
+    setTimeout(() => { if (ico) ico.style.animation = ''; }, 900);
     toast('Guardado localmente'); return;
   }
   try {
     await SB.from('finapp_user_data').upsert(
-      { user_id:APP.user.id, data:JSON.stringify(DB), updated_at:new Date().toISOString() },
-      { onConflict:'user_id' }
+      { user_id: APP.user.id, data: JSON.stringify(DB), updated_at: new Date().toISOString() },
+      { onConflict: 'user_id' }
     );
-    APP.syncMode='cloud'; updateSync(); toast('✅ Sincronizado en la nube');
-  } catch(e) { toast('Error: '+e.message,'r'); }
-  ico.className='bi bi-cloud-check'; ico.style.animation='';
+    APP.syncMode = 'cloud'; updateSync();
+    toast('✅ Sincronizado en la nube');
+  } catch(e) { toast('Error al sincronizar: ' + e.message, 'r'); }
+  if (ico) ico.style.animation = '';
 }
 
 async function loadCloud() {
-  if (!SB||!APP.user) return;
+  if (!SB || !APP.user) return;
   try {
-    const {data,error}=await SB.from('finapp_user_data').select('data').eq('user_id',APP.user.id).single();
-    if (error||!data) return;
+    const { data, error } = await SB.from('finapp_user_data')
+      .select('data')
+      .eq('user_id', APP.user.id)
+      .single();
+
+    if (error || !data) {
+      // No hay datos en la nube aún — usar lo que hay en local
+      if (!DB.categorias?.length) seedCats();
+      return;
+    }
+
     const remote = JSON.parse(data.data);
-    // Merge: remoto tiene prioridad, pero preservamos categorías si están vacías
-    DB = { ...DB, ...remote };
+    // La nube tiene prioridad total
+    DB = remote;
     if (!DB.categorias?.length) seedCats();
-    saveDB(); APP.syncMode='cloud'; updateSync();
-  } catch(e) { console.warn('loadCloud:', e); }
+
+    // Guardar local SIN triggerear sync (evita loop)
+    _saveLocalOnly();
+    APP.syncMode = 'cloud';
+    updateSync();
+  } catch(e) {
+    console.warn('loadCloud error:', e);
+    if (!DB.categorias?.length) seedCats();
+  }
 }
 
 // ════════════════════════════════════════════
@@ -1959,10 +2025,15 @@ function startApp() {
   document.getElementById('authWrap').style.display = 'none';
   document.getElementById('app').style.display = 'flex';
 
-  // Si hay usuario, cargar sus datos desde la nube (no mezclar con otro)
   if (APP.user) {
-    DB = { cuentas:[], tarjetas:[], categorias:[], movimientos:[], presupuestos:[], metas:[], aportes:[], recurrencias:[] };
-    loadCloud().then(() => { if (!DB.categorias.length) { seedCats(); saveDB(); } rDash(); });
+    // Primero cargar local (respuesta inmediata en pantalla)
+    loadDB();
+    // Luego sincronizar con la nube (actualiza si hay datos más recientes)
+    loadCloud().then(() => {
+      rDash();
+      // Si aún no hay categorías después de todo, crear las default
+      if (!DB.categorias?.length) { seedCats(); saveDB(); }
+    });
   } else {
     loadDB();
   }
