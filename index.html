@@ -804,7 +804,8 @@ input,select,textarea{font-family:var(--f);outline:none;color:var(--t1)}
       <div class="card" style="margin-top:10px">
         <div class="card-h" style="margin-bottom:10px"><span class="card-t">Datos</span></div>
         <button class="btn btn-o" style="margin-bottom:8px" onclick="exportJSON()"><i class="bi bi-download"></i> Exportar JSON</button>
-        <button class="btn btn-o" style="margin-bottom:8px" onclick="doSync()"><i class="bi bi-cloud-arrow-up"></i> Sincronizar ahora</button>
+        <button class="btn" style="margin-bottom:8px" onclick="doSync()"><i class="bi bi-cloud-arrow-up"></i> Respaldar en la nube ahora</button>
+        <div id="backupStatus" style="text-align:center;font-size:11px;color:var(--t2);padding:4px 0"></div>
       </div>
 
       <div style="text-align:center;padding:20px 0;color:var(--t3);font-size:12px">
@@ -960,10 +961,11 @@ function initTheme() {
 }
 
 // ════════════════════════════════════════════
-// STATE & DB
+// STATE & DB — LOCAL FIRST
 // ════════════════════════════════════════════
-const DBK = 'finapp_v3';
-const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+const DBK      = 'finapp_v3';
+const DBK_META = 'finapp_v3_meta';
+const MESES    = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 
 let APP = {
   mes: new Date().getMonth()+1, anio: new Date().getFullYear(),
@@ -978,13 +980,15 @@ let DB = {
   presupuestos:[], metas:[], aportes:[], recurrencias:[]
 };
 
+// ── Guardar local (siempre, instantáneo) ──────────────────
 function saveDB() {
   localStorage.setItem(DBK, JSON.stringify(DB));
   localStorage.setItem(DBK+'_cfg', JSON.stringify(APP.config));
-  // Auto-sync a la nube con debounce
-  if (SB && APP.user) _cloudSync();
+  _setBackupPending(true);
+  if (SB && APP.user) _scheduleBackup();
 }
 
+// ── Cargar local ──────────────────────────────────────────
 function loadDB() {
   try {
     const r = localStorage.getItem(DBK);
@@ -995,28 +999,95 @@ function loadDB() {
   if (!DB.categorias.length) seedCats();
 }
 
-// Sync silencioso con debounce de 2s
-let _syncTimer = null;
-function _cloudSync() {
-  clearTimeout(_syncTimer);
-  _syncTimer = setTimeout(async () => {
-    if (!SB || !APP.user) return;
-    try {
-      await SB.from('finapp_user_data').upsert(
-        { user_id: APP.user.id, data: JSON.stringify(DB), updated_at: new Date().toISOString() },
-        { onConflict: 'user_id' }
-      );
-      APP.syncMode = 'cloud';
-      updateSync();
-    } catch(e) { console.warn('Sync error:', e.message); }
-  }, 2000);
+// ── ¿Tiene datos locales? ─────────────────────────────────
+function _hasLocalData() {
+  try {
+    const r = localStorage.getItem(DBK);
+    if (!r) return false;
+    const d = JSON.parse(r);
+    return (d.cuentas?.length > 0) || (d.movimientos?.length > 0);
+  } catch(e) { return false; }
 }
 
-// Guardar local SIN disparar sync a la nube (para loadCloud)
-function _saveLocalOnly() {
-  localStorage.setItem(DBK, JSON.stringify(DB));
-  localStorage.setItem(DBK+'_cfg', JSON.stringify(APP.config));
+// ── Metadata de respaldo ──────────────────────────────────
+function _setBackupPending(v) {
+  try {
+    const m = JSON.parse(localStorage.getItem(DBK_META)||'{}');
+    m.pending = v;
+    if (v) m.lastChange = new Date().toISOString();
+    localStorage.setItem(DBK_META, JSON.stringify(m));
+  } catch(e) {}
 }
+function _getBackupMeta() {
+  try { return JSON.parse(localStorage.getItem(DBK_META)||'{}'); }
+  catch(e) { return {}; }
+}
+function _setLastBackup() {
+  try {
+    const m = _getBackupMeta();
+    m.pending = false;
+    m.lastBackup = new Date().toISOString();
+    localStorage.setItem(DBK_META, JSON.stringify(m));
+  } catch(e) {}
+}
+
+// ── Auto-respaldo con debounce de 30s ─────────────────────
+let _backupTimer = null;
+function _scheduleBackup() {
+  clearTimeout(_backupTimer);
+  _backupTimer = setTimeout(() => _doBackup(false), 30000);
+}
+
+// ── Hacer respaldo en la nube ─────────────────────────────
+async function _doBackup(showToast = true) {
+  if (!SB || !APP.user) return false;
+  try {
+    await SB.from('finapp_user_data').upsert(
+      { user_id: APP.user.id, data: JSON.stringify(DB), updated_at: new Date().toISOString() },
+      { onConflict: 'user_id' }
+    );
+    _setLastBackup();
+    APP.syncMode = 'cloud';
+    updateSync();
+    if (showToast) toast('✅ Respaldo guardado en la nube');
+    return true;
+  } catch(e) {
+    if (showToast) toast('Error al respaldar: ' + e.message, 'r');
+    return false;
+  }
+}
+
+// ── Restaurar desde la nube (solo si no hay datos locales) ─
+async function _restoreFromCloud() {
+  if (!SB || !APP.user) return false;
+  try {
+    const { data, error } = await SB.from('finapp_user_data')
+      .select('data').eq('user_id', APP.user.id).single();
+    if (error || !data) return false;
+    const remote = JSON.parse(data.data);
+    DB = remote;
+    if (!DB.categorias?.length) seedCats();
+    localStorage.setItem(DBK, JSON.stringify(DB));
+    _setBackupPending(false);
+    APP.syncMode = 'cloud';
+    updateSync();
+    return true;
+  } catch(e) { console.warn('Restore error:', e); return false; }
+}
+
+// ── Sync manual desde botón ───────────────────────────────
+async function doSync() {
+  const ico = document.getElementById('syncIco');
+  if (ico) ico.style.animation = 'spin .7s linear infinite';
+  if (!SB || !APP.user) {
+    toast('Inicia sesión para respaldar en la nube', 'a');
+    if (ico) ico.style.animation = '';
+    return;
+  }
+  await _doBackup(true);
+  if (ico) ico.style.animation = '';
+}
+
 function seedCats() {
   DB.categorias = [
     {id:'C01',nombre:'Alimentación',tipo:'GASTO',color:'#F85149',icono:'bi-cart3'},
@@ -1139,21 +1210,34 @@ function showAuth() {
 }
 
 function logout() {
+  // Hacer respaldo final antes de cerrar sesión si hay pendientes
+  if (SB && APP.user && _getBackupMeta().pending) _doBackup(false);
   if (SB) SB.auth.signOut();
-  APP.user=null; APP.syncMode='local';
+  APP.user = null; APP.syncMode = 'local';
   localStorage.removeItem('skipAuth');
-  // Limpiar DB local para que no se mezclen datos de otro usuario
-  DB = { cuentas:[], tarjetas:[], categorias:[], movimientos:[], presupuestos:[], metas:[], aportes:[], recurrencias:[] };
-  localStorage.removeItem(DBK); localStorage.removeItem(DBK+'_cfg');
+  // NO borramos datos locales — quedan en el celular
+  updateSync();
   showAuth();
 }
 
 function updateSync() {
-  const dot=document.getElementById('sdot'), msg=document.getElementById('syncMsg');
+  const dot = document.getElementById('sdot'), msg = document.getElementById('syncMsg');
   if (!dot) return;
-  if (APP.syncMode==='cloud') { dot.className='sdot cloud'; msg.textContent='Sincronizado en la nube ✓'; }
-  else if (APP.syncMode==='local') { dot.className='sdot off'; msg.textContent='Solo local — inicia sesión para sincronizar'; }
-  else { dot.className='sdot local'; msg.textContent='Modo local activo'; }
+  const meta = _getBackupMeta();
+  const lastBackup = meta.lastBackup ? new Date(meta.lastBackup).toLocaleDateString('es-PE',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}) : null;
+  if (!APP.user) {
+    dot.className = 'sdot off';
+    msg.textContent = 'Solo local · inicia sesión para respaldar en la nube';
+  } else if (APP.syncMode === 'cloud') {
+    dot.className = 'sdot cloud';
+    msg.textContent = lastBackup ? `Último respaldo: ${lastBackup}` : 'Respaldado en la nube ✓';
+  } else if (meta.pending) {
+    dot.className = 'sdot local';
+    msg.textContent = 'Cambios pendientes de respaldar';
+  } else {
+    dot.className = 'sdot cloud';
+    msg.textContent = 'Datos al día ✓';
+  }
 }
 
 async function doSync() {
@@ -1175,34 +1259,6 @@ async function doSync() {
   if (ico) ico.style.animation = '';
 }
 
-async function loadCloud() {
-  if (!SB || !APP.user) return;
-  try {
-    const { data, error } = await SB.from('finapp_user_data')
-      .select('data')
-      .eq('user_id', APP.user.id)
-      .single();
-
-    if (error || !data) {
-      // No hay datos en la nube aún — usar lo que hay en local
-      if (!DB.categorias?.length) seedCats();
-      return;
-    }
-
-    const remote = JSON.parse(data.data);
-    // La nube tiene prioridad total
-    DB = remote;
-    if (!DB.categorias?.length) seedCats();
-
-    // Guardar local SIN triggerear sync (evita loop)
-    _saveLocalOnly();
-    APP.syncMode = 'cloud';
-    updateSync();
-  } catch(e) {
-    console.warn('loadCloud error:', e);
-    if (!DB.categorias?.length) seedCats();
-  }
-}
 
 // ════════════════════════════════════════════
 // NAV
@@ -1931,12 +1987,23 @@ function rPerfil(){
     if(avatar){av.innerHTML=`<img src="${avatar}" style="width:100%;height:100%;border-radius:inherit;object-fit:cover">`;}
     else{av.textContent=name.charAt(0).toUpperCase();}
   }
-  // Badge plan
   const pb=document.getElementById('planBadge');
   if(pb){pb.textContent=isAdmin()?'👑 Admin':'Plan Gratuito';}
-  // Botón admin
   const ab=document.getElementById('adminBtn');
   if(ab)ab.style.display=isAdmin()?'':'none';
+  // Estado de respaldo
+  const bs=document.getElementById('backupStatus');
+  if(bs){
+    const meta=_getBackupMeta();
+    if(meta.lastBackup){
+      const d=new Date(meta.lastBackup).toLocaleDateString('es-PE',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+      bs.innerHTML=`<i class="bi bi-cloud-check" style="color:var(--green)"></i> Último respaldo: ${d}`;
+    } else if(u){
+      bs.innerHTML=`<i class="bi bi-exclamation-circle" style="color:var(--amber)"></i> Sin respaldo aún — toca el botón para respaldar`;
+    } else {
+      bs.innerHTML=`Inicia sesión para activar respaldos en la nube`;
+    }
+  }
   updateSync();
   const n=document.getElementById('cfgN'),s=document.getElementById('cfgS'),a=document.getElementById('cfgA');
   if(n)n.value=APP.config.nombre||'';if(s)s.value=APP.config.simbolo||'S/';if(a)a.value=APP.config.alerta||80;
@@ -2025,20 +2092,24 @@ function startApp() {
   document.getElementById('authWrap').style.display = 'none';
   document.getElementById('app').style.display = 'flex';
 
-  if (APP.user) {
-    // Primero cargar local (respuesta inmediata en pantalla)
-    loadDB();
-    // Luego sincronizar con la nube (actualiza si hay datos más recientes)
-    loadCloud().then(() => {
-      rDash();
-      // Si aún no hay categorías después de todo, crear las default
-      if (!DB.categorias?.length) { seedCats(); saveDB(); }
-    });
-  } else {
-    loadDB();
+  // SIEMPRE carga local primero — rápido e inmediato
+  loadDB();
+
+  // Si hay sesión y NO hay datos locales → restaurar desde nube
+  // Si SÍ hay datos locales → usarlos (no pisar con la nube)
+  if (APP.user && SB) {
+    if (!_hasLocalData()) {
+      // Dispositivo nuevo o limpio → restaurar respaldo
+      _restoreFromCloud().then(restored => {
+        if (restored) { rDash(); toast('✅ Datos restaurados desde tu respaldo', 'g'); }
+      });
+    } else {
+      // Ya tiene datos → solo actualizar estado de sync
+      APP.syncMode = 'cloud';
+      updateSync();
+    }
   }
 
-  // Mostrar botón admin si corresponde
   setTimeout(() => {
     const adminBtn = document.getElementById('adminBtn');
     if (adminBtn) adminBtn.style.display = isAdmin() ? '' : 'none';
